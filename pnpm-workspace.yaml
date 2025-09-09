@@ -1,0 +1,4 @@
+packages:
+  - packages/*
+  - packages/react-strict-dom/packages/*
+  - apps/*

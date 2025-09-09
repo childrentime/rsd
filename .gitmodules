@@ -1,0 +1,3 @@
+[submodule "packages/react-strict-dom"]
+	path = packages/react-strict-dom
+	url = https://github.com/childrentime/react-strict-dom.git
