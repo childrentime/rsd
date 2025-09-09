@@ -1,21 +1,17 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { html } from 'react-strict-dom';
+import { css, html } from 'react-strict-dom';
+import { FlatListProps } from './common';
 
-// Web 版本的 FlatList props 定义
-export interface FlatListProps<T> {
-  data: T[];
-  renderItem: ({ item, index }: { item: T; index: number }) => React.ReactElement;
-  keyExtractor?: (item: T, index: number) => string;
-  onEndReached?: () => void;
-  onEndReachedThreshold?: number;
-  ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null;
-  ListFooterComponent?: React.ComponentType<any> | React.ReactElement | null;
-  ListEmptyComponent?: React.ComponentType<any> | React.ReactElement | null;
-  contentContainerStyle?: any;
-  style?: any;
-  refreshing?: boolean;
-  onRefresh?: () => void;
-}
+const styles = css.create({
+  container: {
+    width: '100%',
+  },
+  guideElement: {
+    height: '1px',
+    width: '100%',
+    pointerEvents: 'none',
+  },
+});
 
 export function FlatList<T>({
   data,
@@ -28,31 +24,41 @@ export function FlatList<T>({
   ListEmptyComponent,
   contentContainerStyle,
   style,
-  refreshing: _refreshing, // unused for now
-  onRefresh: _onRefresh, // unused for now
 }: FlatListProps<T>) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  console.log('FlatList web');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const guideElementRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // 处理滚动到底部的逻辑
-  const handleScroll = useCallback((e: Event) => {
-    if (!onEndReached) return;
-    
-    const target = e.target as HTMLElement;
-    const { scrollTop, scrollHeight, clientHeight } = target;
-    const threshold = scrollHeight * onEndReachedThreshold;
-    
-    if (scrollHeight - scrollTop - clientHeight <= threshold) {
-      onEndReached();
-    }
-  }, [onEndReached, onEndReachedThreshold]);
-
+  // 使用 IntersectionObserver 监听 guide 元素
   useEffect(() => {
-    const scrollElement = scrollRef.current;
-    if (!scrollElement) return;
+    if (!onEndReached || !guideElementRef.current) return;
 
-    scrollElement.addEventListener('scroll', handleScroll);
-    return () => scrollElement.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+    // 创建 IntersectionObserver，使用 viewport 作为 root
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            onEndReached();
+          }
+        });
+      },
+      {
+        rootMargin: `${onEndReachedThreshold * 100}%`,
+        threshold: 0,
+      }
+    );
+
+    // 开始观察 guide 元素
+    observerRef.current.observe(guideElementRef.current);
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+    };
+  }, [onEndReached, onEndReachedThreshold, data]);
 
   const defaultKeyExtractor = useCallback((item: T, index: number) => {
     return keyExtractor ? keyExtractor(item, index) : index.toString();
@@ -77,31 +83,30 @@ export function FlatList<T>({
 
   return (
     <html.div
-      ref={scrollRef}
-      style={[
-        {
-          overflow: 'auto',
-          height: '100%',
-          width: '100%',
-        },
-        style
-      ]}
+      ref={containerRef}
+      style={[styles.container, style, contentContainerStyle]}
     >
-      <html.div style={contentContainerStyle}>
-        {ListHeaderComponent && (
-          React.isValidElement(ListHeaderComponent) ? 
-            ListHeaderComponent : 
-            React.createElement(ListHeaderComponent)
-        )}
-        
-        {renderItems()}
-        
-        {ListFooterComponent && (
-          React.isValidElement(ListFooterComponent) ? 
-            ListFooterComponent : 
-            React.createElement(ListFooterComponent)
-        )}
-      </html.div>
+      {ListHeaderComponent && (
+        React.isValidElement(ListHeaderComponent) ? 
+          ListHeaderComponent : 
+          React.createElement(ListHeaderComponent)
+      )}
+      
+      {renderItems()}
+      
+      {ListFooterComponent && (
+        React.isValidElement(ListFooterComponent) ? 
+          ListFooterComponent : 
+          React.createElement(ListFooterComponent)
+      )}
+      
+      {/* Guide 元素用于触发无限滚动 */}
+      {onEndReached && data && data.length > 0 && (
+        <html.div
+          ref={guideElementRef}
+          style={styles.guideElement}
+        />
+      )}
     </html.div>
   );
 }

@@ -1,27 +1,26 @@
 import { css, html } from "react-strict-dom";
-import FlatList from "./FlatList";
 import { useCallback, useState } from "react";
+import FlatList from "./FlatList";
+import SafeAreaPaddingTop from "./SafeAreaPaddingTop";
+import LoadingDots from "./LoadingDots";
+import StickyHeader from "./StickyHeader";
 
 const styles = css.create({
   container: {
     backgroundColor: '#f8f9fa',
-    minHeight: '100vh',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {
-    position: 'sticky',
-    top: 0,
-    backgroundColor: 'white',
-    paddingTop: 16,
-    paddingBottom: 16,
-    textAlign: 'center',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60,
     fontSize: 18,
     fontWeight: '600',
     color: '#1a1a1a',
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: '#e5e7eb',
-    zIndex: 10,
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
   },
   productList: {
@@ -82,6 +81,9 @@ const styles = css.create({
     paddingRight: 8,
     borderRadius: 6,
   },
+  dynamicOpacity: (opacity: number) => ({
+    opacity,
+  }),
   productInfo: {
     flex: 1,
     display: 'flex',
@@ -213,19 +215,13 @@ const styles = css.create({
     color: '#6b7280',
     fontSize: 14,
   },
-  // 用纯 CSS 实现的简单加载点动效
-  loadingDots: {
-    display: 'inline-block',
-    marginRight: 8,
-  },
-  dot: {
-    display: 'inline-block',
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    backgroundColor: '#ef4444',
-    marginRight: 4,
-    opacity: 0.3,
+  // 加载点容器样式
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   endMessage: {
     textAlign: 'center',
@@ -249,21 +245,6 @@ const fruitImages = [
 ];
 
 
-// 简单的加载动画组件
-const LoadingDots = () => {
-  return (
-    <html.span style={styles.loadingDots}>
-      {[0, 1, 2].map((index) => (
-        <html.span
-          key={index}
-          style={[
-            styles.dot,
-          ]}
-        />
-      ))}
-    </html.span>
-  );
-};
 
 // 简单的图片组件
 const ProductImage = ({ src, alt, style }: { src: string; alt: string; style: any }) => {
@@ -275,7 +256,7 @@ const ProductImage = ({ src, alt, style }: { src: string; alt: string; style: an
       <html.img
         src={src}
         alt={alt}
-        style={[style, { opacity: loaded ? 1 : 0 }]}
+        style={[style, styles.dynamicOpacity(loaded ? 1 : 0)]}
         onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
       />
@@ -427,18 +408,15 @@ export function MyComponent() {
     );
   }, []);
 
-  // 渲染头部组件
-  const renderHeader = useCallback(() => (
-    <html.div style={styles.header}>你可能想要找</html.div>
-  ), []);
-
   // 渲染底部组件
   const renderFooter = useCallback(() => {
     if (loading) {
       return (
         <html.div style={styles.loading}>
-          <LoadingDots />
-          <html.span>正在加载更多商品...</html.span>
+          <html.div style={styles.loadingContainer}>
+            <LoadingDots size={8} color="#ef4444" />
+            <html.span>正在加载更多商品...</html.span>
+          </html.div>
         </html.div>
       );
     }
@@ -456,13 +434,16 @@ export function MyComponent() {
 
   return (
     <html.div style={styles.container}>
+      <SafeAreaPaddingTop/>
+      <StickyHeader style={styles.header}>
+        你可能想要找
+      </StickyHeader>
       <FlatList
         data={products}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         onEndReached={loadMore}
         onEndReachedThreshold={0.1}
-        ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
         contentContainerStyle={{
           paddingTop: 12,
@@ -470,7 +451,6 @@ export function MyComponent() {
           paddingLeft: 16,
           paddingRight: 16,
         }}
-        style={{ flex: 1 }}
       />
     </html.div>
   );

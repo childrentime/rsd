@@ -1,12 +1,12 @@
 import { FlatList as RNFlatList, FlatListProps as RNFlatListProps } from 'react-native';
-
-// React Native 版本直接使用原生 FlatList
-export interface FlatListProps<T> extends RNFlatListProps<T> {
-  // 可以在这里添加自定义的 props 如果需要的话
-}
+import { FlatListProps } from './common';
 
 export function FlatList<T>(props: FlatListProps<T>) {
-  return <RNFlatList {...props} />;
+  // 将我们的 props 转换为 React Native FlatList 的 props
+  // 不使用内置的 sticky 功能，让 StickyHeader 组件自己处理
+  return <RNFlatList<T> 
+    {...(props as RNFlatListProps<T>)} 
+  />;
 }
 
 export default FlatList;

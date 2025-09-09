@@ -5,9 +5,9 @@ import { MyComponent } from 'ui'
 function App() {
 
   return (
-    <>
+    <div className='app'>
       <MyComponent />
-    </>
+    </div>
   )
 }
 

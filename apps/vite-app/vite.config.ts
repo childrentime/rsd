@@ -9,6 +9,9 @@ export default defineConfig({
       babel: babelLoader,
     }),
   ],
+  define: {
+    __PLATFORM__: JSON.stringify('h5'),
+  },
   resolve: {
     // 处理平台特定的文件扩展名
     extensions: ['.web.js', '.web.jsx', '.web.ts', '.web.tsx', '.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],

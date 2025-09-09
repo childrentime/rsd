@@ -1,6 +1,7 @@
+import React from 'react';
+import { FlatListProps } from "./common";
 
-
-let FlatList = null;
+let FlatList: <T>(props: FlatListProps<T>) => React.ReactElement = null as any;
 
 if (__PLATFORM__ === "h5") {
   FlatList = require('./index.web').default;
@@ -9,3 +10,4 @@ if (__PLATFORM__ === "h5") {
 }
 
 export default FlatList;
+export type { FlatListProps } from './common';
